@@ -2,6 +2,7 @@ import os
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
+from pandas.core.dtypes.dtypes import time
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 import json
@@ -27,7 +28,9 @@ class EmbeddingService:
         # Initialize Qdrant client
         self.qdrant_client = QdrantClient(
             url=QDRANT_URL,
-            api_key=QDRANT_API_KEY
+            api_key=QDRANT_API_KEY,
+            timeout=30000.0,
+            prefer_grpc=True,
         )
 
     def get_embeddings(self, texts: List[str]) -> List[List[float]]:
@@ -102,8 +105,8 @@ class EmbeddingService:
 
 def main():
     # Hardcoded file path
-    file_path = "transcription.txt"
-    collection_name = "semantic_search"
+    file_path = "Maxwell_Data.xlsx"
+    collection_name = "test"
     documents = []
     ext = os.path.splitext(file_path)[1].lower()
 
@@ -122,6 +125,41 @@ def main():
                             doc["id"] = row["id"]
                         doc["metadata"] = {k: v for k, v in row.items() if k not in ['id', 'text']}
                         documents.append(doc)
+        elif ext == ".xlsx":
+            import pandas as pd
+            df = pd.read_excel(file_path)
+            for i, row in df.iterrows():
+                question = str(row["Question"]).strip() if "Question" in row and pd.notna(row["Question"]) else ""
+                answer = str(row["Answer"]).strip() if "Answer" in row and pd.notna(row["Answer"]) else ""
+                if question and answer:
+                    text = f"Q: {question}\nA: {answer}"
+                elif question:
+                    text = question
+                elif answer:
+                    text = answer
+                else:
+                    continue  # Skip rows with no content
+                doc = {
+                    "id": i + 1,
+                    "text": text,
+                    "metadata": {
+                        "Question": question,
+                        "Answer": answer,
+                        **{k: str(v) for k, v in row.items() if k not in ['Question', 'Answer']}
+                    }
+                }
+                documents.append(doc)
+        elif ext == ".pdf":
+            import pdfplumber
+            with pdfplumber.open(file_path) as pdf:
+                for i, page in enumerate(pdf.pages):
+                    text = page.extract_text()
+                    if text and text.strip():
+                        documents.append({
+                            "id": i + 1,
+                            "text": text.strip(),
+                            "metadata": {"page": i + 1}
+                        })
         elif ext == ".txt":
             with open(file_path, 'r', encoding='utf-8') as file:
                 lines = [line.strip() for line in file if line.strip()]
