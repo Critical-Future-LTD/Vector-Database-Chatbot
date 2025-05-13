@@ -1,7 +1,7 @@
 # QD Indexer
 
 
-![Architecture Diagram](https://via.placeholder.com/800x400?text=HF+Embeddings+to+Qdrant+Architecture)
+![Architecture Diagram](./arch.png)
 
 ## 📋 Overview
 
