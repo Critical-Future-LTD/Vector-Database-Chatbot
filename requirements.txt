@@ -1,0 +1,12 @@
+python-dotenv==1.0.1
+huggingface-hub==0.21.3
+qdrant-client==1.7.3
+numpy==1.26.4
+pydantic==2.6.3
+requests==2.31.0
+tqdm==4.66.2
+typing-extensions==4.10.0
+urllib3==1.26.18
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.6
