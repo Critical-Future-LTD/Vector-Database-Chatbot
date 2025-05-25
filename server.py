@@ -111,7 +111,7 @@ retriever = db.as_retriever(
 )
 
 # Create a new collection for logs
-logs_collection_name = "mawared_logs"
+logs_collection_name = os.getenv("LOGS_COLLECTION_NAME")
 
 # Check if logs collection exists
 try:
