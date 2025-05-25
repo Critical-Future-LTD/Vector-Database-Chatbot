@@ -127,7 +127,7 @@ class EmbeddingService:
 def main():
     # Hardcoded file path
     file_path = "Maxwell_Data.xlsx"
-    collection_name = "test"
+    collection_name = os.getenv("COLLECTION_NAME")
     documents = []
     ext = os.path.splitext(file_path)[1].lower()
 

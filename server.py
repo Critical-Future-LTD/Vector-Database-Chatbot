@@ -71,7 +71,7 @@ except Exception as e:
     exit(1)
 
 # Create the main collection for Mawared HR
-collection_name = "mawared"
+collection_name = os.getenv("COLLECTION_NAME")
 
 max_retries = 3
 retry_count = 0
