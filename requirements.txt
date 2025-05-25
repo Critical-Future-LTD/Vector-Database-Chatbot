@@ -23,3 +23,4 @@ langchain-core
 sentence-transformers
 python-dotenv
 gradio
+langchain_qdrant
