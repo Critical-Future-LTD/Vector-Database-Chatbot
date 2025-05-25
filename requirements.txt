@@ -13,3 +13,13 @@ idna==3.6
 pandas
 openpyxl
 pdfplumber
+torch
+transformers
+qdrant-client
+langchain
+langchain-community
+langchain-openai
+langchain-core
+sentence-transformers
+python-dotenv
+gradio

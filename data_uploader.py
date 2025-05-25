@@ -1,8 +1,8 @@
 import os
+import time
 from typing import List, Dict, Any
 from dotenv import load_dotenv
 from huggingface_hub import InferenceClient
-from pandas.core.dtypes.dtypes import time
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 import json
@@ -29,7 +29,7 @@ class EmbeddingService:
         self.qdrant_client = QdrantClient(
             url=QDRANT_URL,
             api_key=QDRANT_API_KEY,
-            timeout=30000.0,
+            timeout=60000.0,  # Increased timeout to 60 seconds
             prefer_grpc=True,
         )
 
@@ -39,20 +39,41 @@ class EmbeddingService:
 
     def create_collection(self, collection_name: str) -> None:
         """Create a collection in Qdrant if it doesn't exist."""
-        # Use list_collections to check existence
-        collections = self.qdrant_client.get_collections().collections
-        if any(c.name == collection_name for c in collections):
-            print(f"Collection '{collection_name}' already exists.")
-            return
-        # Create a new collection
-        self.qdrant_client.create_collection(
-            collection_name=collection_name,
-            vectors_config=models.VectorParams(
-                size=VECTOR_SIZE,
-                distance=models.Distance.COSINE
-            )
-        )
-        print(f"Collection '{collection_name}' created successfully.")
+        max_retries = 3
+        retry_delay = 2  # seconds
+
+        # Check collection existence with retries
+        for attempt in range(max_retries):
+            try:
+                collections = self.qdrant_client.get_collections().collections
+                if any(c.name == collection_name for c in collections):
+                    print(f"Collection '{collection_name}' already exists.")
+                    return
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise Exception(f"Failed to check collection existence after {max_retries} attempts: {str(e)}")
+                print(f"Attempt {attempt + 1} failed to check collections, retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
+
+        # Create a new collection with retries
+        for attempt in range(max_retries):
+            try:
+                self.qdrant_client.create_collection(
+                    collection_name=collection_name,
+                    vectors_config=models.VectorParams(
+                        size=VECTOR_SIZE,
+                        distance=models.Distance.COSINE
+                    ),
+                    timeout=60.0  # 60 seconds timeout for creation
+                )
+                print(f"Collection '{collection_name}' created successfully.")
+                return
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise Exception(f"Failed to create collection after {max_retries} attempts: {str(e)}")
+                print(f"Attempt {attempt + 1} failed to create collection, retrying in {retry_delay}s...")
+                time.sleep(retry_delay)
 
     def upsert_documents(self, collection_name: str, documents: List[Dict[str, Any]]) -> None:
         """
